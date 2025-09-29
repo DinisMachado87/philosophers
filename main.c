@@ -1,68 +1,41 @@
-#include <stdio.h>
-#include <limits.h>
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/29 19:25:28 by dimachad          #+#    #+#             */
+/*   Updated: 2025/09/30 00:11:03 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-#define ERR -1
+#include "philo.h"
 
-typedef struct s_state {
-	long long	n_philos;
-	long long	t_die;
-	long long	t_eat;
-	long long	t_sleep;
-	long long	n_eats;
-}	t_state;
-
-typedef struct s_philosopher {
-	
-}	t_philo;
-
-long long	atoll(char *original)
+int	init_philo(t_philo *ph, t_state *s, size_t i)
 {
-	char		*str;
-	long long	n;
-	int			digit;
-
-	str = original;
-	n = 0;
-	while (*str == ' ' || (*str >= '\t' && *str <= '\r'))
-		str++;
-	if (*str == '-')
-		return (printf("Err: Negative arg: %s\n", original), ERR);
-	if (*str == '-' || *str == '+')
-		str++;
-	while (*str >= '0' && *str <= '9')
-	{
-		digit = *str++ - '0';
-		if (n > (LLONG_MAX - digit) / 10)
-			return (printf("Err: Atoll overflow: %s\n", original), ERR);
-		n = n * 10 + digit;
-	}
-	if (*str)
-		return (printf("Err: Arg with invalid chars: %s\n", original), ERR);
-	return (n);
-}
-
-int	init_state(int argc, char **argv, t_state *s)
-{
-	char *err = "Usage: %s n_philo, t_die, t_eat, t_sleep, [opt:n_eats]";
-
-	if (argc != 5 && argc != 6)
-		return (printf(err, argv[0]), 0);
-	s->n_philos = atoll(argv[1]);
-	s->t_die = atoll(argv[2]);
-	s->t_eat = atoll(argv[3]);
-	s->t_sleep = atoll(argv[4]);
-	if (argc == 6)
-		s->n_eats = atoll(argv[5]);
-	if (s->n_philos <= 0 || s->t_eat <= 0 || s->t_die <= 0 || s->t_sleep <= 0 || s->n_eats < 0)
-		return (printf("Err: arg '0' or not pos long long\n"), ERR);
+	ph->left = i - 1;
+	ph->right = (i + 1) % s->n_philos;
 	return (1);
 }
+
 /* number_of_philosophers time_to_die time_to_eat
  * time_to_sleep, [number_of_times_each_philosopher_must_eat]`
  */
 int	main(int argc, char **argv)
 {
 	t_state	s;
+	t_philo	*ph;
+	ssize_t	i;
 
-	init_state(argc, argv, &s);
+	i = 0;
+	if (!init_state(argc, argv, &s))
+		return (1);
+	ph = malloc(s.n_philos * sizeof(t_philo));
+	while (i < s.n_philos)
+	{
+		if (!init_philo(&ph[i], &s, i))
+			return (1);
+		i++;
+	}
 }

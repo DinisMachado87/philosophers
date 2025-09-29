@@ -6,22 +6,38 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:25:28 by dimachad          #+#    #+#             */
-/*   Updated: 2025/09/30 00:52:27 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/09/30 01:32:25 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-int	init_philo(t_philo *ph, t_state *s, size_t i)
+int	init_philos(t_philo **phs, t_state *s)
 {
-	ph->left = i - 1;
-	ph->right = (i + 1) % s->n_philos;
-	return (1);
+	char	*err_str = "Err: init_philos: ";
+	t_philo	*ph;
+	size_t	i;
+
+	i = 0;
+	*phs = malloc(s->n_philos * sizeof(t_philo));
+	if (!*phs)
+		return (perror(err_str), ERR);
+	ph = *phs;
+	while (i < s->n_philos)
+	{
+		ph[i].s = s;
+		ph[i].left = &s->forks[i - 1];
+		ph[i].right = &s->forks[(i + 1) % s->n_philos];
+		if (OK != pthread_create(&ph[i].life, NULL, routine, ph[i]))
+			return (perror(err_str), ERR);
+		i++;
+	}
+	return (OK);
 }
 
 int	init_forks(t_state *s)
 {
-	char	*err_str = "ERR: malloc ph and forks:";
+	char	*err_str = "ERR: init_forks:";
 	ssize_t	i;
 
 	i = 0;
@@ -29,8 +45,11 @@ int	init_forks(t_state *s)
 	if (!s->forks)
 		return (perror(err_str), ERR);
 	while (i < s->n_philos)
+	{
 		if (OK != pthread_mutex_init(&s->forks[i], NULL))
 			return (perror(err_str), ERR);
+		i++;
+	}
 	return (OK);
 }
 
@@ -40,19 +59,13 @@ int	init_forks(t_state *s)
 int	main(int argc, char **argv)
 {
 	t_state	s;
-	t_philo	*ph;
+	t_philo	*phs;
 	ssize_t	i;
 
 	i = 0;
-	if (!init_state(argc, argv, &s)
-		|| !init_forks(&s))
+	if (OK != init_state(argc, argv, &s)
+		|| OK != init_forks(&s)
+		|| OK != init_philos(&phs,&s))
 		return (ERR);
-	ph = malloc(s.n_philos * sizeof(t_philo));
-	while (i < s.n_philos)
-	{
-		if (!init_philo(&ph[i], &s, i))
-			return (ERR);
-		i++;
-	}
 	return (OK);
 }

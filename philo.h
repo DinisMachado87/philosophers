@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
-/*   Updated: 2025/09/30 00:50:42 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/09/30 01:31:41 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,9 +32,11 @@ typedef struct s_state {
 }	t_state;
 
 typedef struct s_philosopher {
-	ssize_t	id;
-	ssize_t	left;
-	ssize_t	right;
+	t_state			*s;
+	ssize_t			id;
+	pthread_mutex_t	*left;
+	pthread_mutex_t	*right;
+	pthread_t		life;
 }	t_philo;
 
 int	init_state(int argc, char **argv, t_state *s);

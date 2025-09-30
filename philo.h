@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
-/*   Updated: 2025/09/30 19:36:41 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/09/30 19:54:38 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@
 #include <pthread.h>
 
 typedef struct s_state {
+	pthread_mutex_t	print;
 	ssize_t			n_philos;
 	pthread_mutex_t	*forks;
 	long long		t_die;
@@ -41,5 +42,6 @@ typedef struct s_philosopher {
 
 int	init_state(int argc, char **argv, t_state *s);
 int	routine(t_philo *ph);
+int safe_print(char *str, t_philo *ph);
 
 #endif

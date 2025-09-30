@@ -6,11 +6,13 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:25:28 by dimachad          #+#    #+#             */
-/*   Updated: 2025/09/30 19:34:48 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/09/30 19:43:41 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+#include <bits/pthreadtypes.h>
+#include <pthread.h>
 
 int	init_philos(t_philo **phs, t_state *s)
 {
@@ -59,12 +61,13 @@ int	init_forks(t_state *s)
  */
 int	main(int argc, char **argv)
 {
-	t_state	s;
-	t_philo	*phs;
-	ssize_t	i;
+	t_state			s;
+	t_philo			*phs;
+	ssize_t			i;
 
 	i = 0;
 	if (OK != init_state(argc, argv, &s)
+		|| OK != pthread_mutex_init(&s.print, NULL)
 		|| OK != init_forks(&s)
 		|| OK != init_philos(&phs,&s))
 		return (ERR);

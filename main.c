@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:25:28 by dimachad          #+#    #+#             */
-/*   Updated: 2025/09/30 01:32:25 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/09/30 19:34:48 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ int	init_philos(t_philo **phs, t_state *s)
 	ph = *phs;
 	while (i < s->n_philos)
 	{
+		ph[i].id = i;
 		ph[i].s = s;
 		ph[i].left = &s->forks[i - 1];
 		ph[i].right = &s->forks[(i + 1) % s->n_philos];

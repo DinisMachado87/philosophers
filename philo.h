@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
-/*   Updated: 2025/09/30 01:31:41 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/09/30 19:36:41 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,5 +40,6 @@ typedef struct s_philosopher {
 }	t_philo;
 
 int	init_state(int argc, char **argv, t_state *s);
+int	routine(t_philo *ph);
 
 #endif

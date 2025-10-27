@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/30 19:08:23 by dimachad          #+#    #+#             */
-/*   Updated: 2025/09/30 19:53:59 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/10/27 17:28:48 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,41 +14,50 @@
 #include <bits/pthreadtypes.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <sys/time.h>
 
-int safe_print(char *str, t_philo *ph)
+static int	safe_print(char *str, t_philo *ph)
 {
 	if (OK != pthread_mutex_lock(&ph->s->print)
-		|| OK > printf("Philo %zu grabbed a fork!!!", ph->id)
+		|| OK > printf("%d ", gettimeofday(&ph->s->tv, NULL))
+		|| OK > printf(str, ph->id)
 		|| OK != pthread_mutex_unlock(&ph->s->print))
-		return (perror("Err: Print fork:"), ERR);
+		return (ERR);
 	return (OK);
 }
 
-int	take_forks(t_philo *ph)
+static int	eat(t_philo *ph, t_state *s)
 {
-	pthread_mutex_t	*fork_1;
-	pthread_mutex_t	*fork_2;
-
-	if (ph->id % 2 == 0)
-	{
-		fork_1 = ph->left;
-		fork_2 = ph->right;
-	}
-	else
-	{
-		fork_1 = ph->right;
-		fork_2 = ph->left;
-	}
-	pthread_mutex_lock(fork_1);
-	pthread_mutex_lock(fork_2);
-	return (OK);
+	if (OK == pthread_mutex_lock(ph->fork_1)
+		&& OK == safe_print("Philo %zu grabbed a fork!!!", ph)
+		&& OK == pthread_mutex_lock(ph->fork_2)
+		&& OK == safe_print("Philo %zu grabbed a fork!!!", ph)
+		&& OK == safe_print("Philo %zu is eating!!!", ph)
+		&& OK == wait_and_watch(s->t_eat, &s->end, &s->tv)
+		&& OK == pthread_mutex_unlock(ph->fork_1)
+		&& OK == pthread_mutex_unlock(ph->fork_2))
+		return (OK);
+	if (s->end)
+		return (END);
+	return (perror("Err: eat:"), ERR);
 }
 
-int	routine(t_philo *ph)
+int	routine(void *philosopher)
 {
+	t_philo	*ph;
+	t_state	*s;
+
+	ph = (t_philo *)philosopher;
+	s = ph->s;
 	while (1)
 	{
-		take_forks(ph);
+		if (OK != eat(ph, s)
+			|| OK != safe_print("Philo %zu is sleeping!!!", ph)
+			|| OK != wait_and_watch(s->t_sleep, &s->end, &s->tv)
+			|| OK != safe_print("Philo %zu is thinking!!!", ph))
+			break ;
 	}
-	return(OK);
+	if (s->end)
+		return (END);
+	return (OK);
 }

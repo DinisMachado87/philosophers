@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
-/*   Updated: 2025/10/27 17:27:18 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/10/28 15:56:06 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 # define ERR	-1
 # define OK		0
 
+# include <errno.h>
 # include <stdio.h>
 # include <limits.h>
 # include <stddef.h>
@@ -24,6 +25,8 @@
 # include <pthread.h>
 # include <sys/time.h>
 # include <unistd.h>
+
+typedef struct s_philosopher	t_philo;
 
 typedef struct s_state
 {
@@ -34,23 +37,40 @@ typedef struct s_state
 	long long		n_eats;
 	long long		start;
 	int				end;
+	pthread_mutex_t	mtx_end;
 	pthread_mutex_t	print;
 	pthread_mutex_t	*forks;
-	struct timeval	tv;
+	t_philo			*philos;
+	struct timeval	time;
 }	t_state;
 
-typedef struct s_philosopher
+struct s_philosopher
 {
 	t_state			*s;
-	ssize_t			id;
+	long long		id;
+	long long		last_meal;
+	long long		n_eats;
+	pthread_mutex_t	mtx_philo;
 	pthread_mutex_t	*fork_1;
 	pthread_mutex_t	*fork_2;
 	pthread_t		life;
-}	t_philo;
+	struct timeval	time;
+};
 
-int			init_all(int argc, char **argv, t_state *s, t_philo **phs);
+// init
+int			init_state(int argc, char **argv, t_state *s);
+int			init_forks(t_state *s);
+int			init_philos(t_philo **phs, t_state *s);
+
+int			eat(t_philo *ph, t_state *s);
+void		*routine(void *philosopher);
+
+int			is_end(t_state *s);
+int			now(struct timeval *time, t_state *s);
+int			wait_and_watch(size_t duration, t_state *s, struct timeval *tv);
+int			safe_print(char *str, t_philo *ph, t_state *s);
+int			set_and_print_error(t_state *s, char *str);
+
 long long	ft_atoll(char *original);
-int			routine(void *philosopher);
-int			wait_and_watch(size_t duration, int *end, struct timeval *tv);
 
 #endif

@@ -1,30 +1,24 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   vigilant_sleep.c                                   :+:      :+:    :+:   */
+/*   set_and_print_error.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/27 00:55:16 by dimachad          #+#    #+#             */
-/*   Updated: 2025/10/27 02:38:20 by dimachad         ###   ########.fr       */
+/*   Created: 2025/10/27 21:28:59 by dimachad          #+#    #+#             */
+/*   Updated: 2025/10/28 01:20:58 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-int	wait_and_watch(size_t duration, int *end, struct timeval *tv)
+int	set_and_print_error(t_state *s, char *str)
 {
-	size_t			sleep_start;
-	size_t			time_slept;
-
-	sleep_start = gettimeofday(tv, NULL);
-	time_slept = gettimeofday(tv, NULL) - sleep_start;
-	while (time_slept > duration)
-	{
-		time_slept = gettimeofday(tv, NULL) - sleep_start;
-		if (*end)
-			return (END);
-		usleep(500);
-	}
-	return (OK);
+	pthread_mutex_lock(&s->mtx_end);
+	s->end = ERR;
+	pthread_mutex_unlock(&s->mtx_end);
+	pthread_mutex_lock(&s->print);
+	printf(str);
+	pthread_mutex_unlock(&s->print);
+	return (ERR);
 }

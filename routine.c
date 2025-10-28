@@ -6,43 +6,13 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/30 19:08:23 by dimachad          #+#    #+#             */
-/*   Updated: 2025/10/27 17:28:48 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/10/28 15:48:57 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
-#include <bits/pthreadtypes.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <sys/time.h>
 
-static int	safe_print(char *str, t_philo *ph)
-{
-	if (OK != pthread_mutex_lock(&ph->s->print)
-		|| OK > printf("%d ", gettimeofday(&ph->s->tv, NULL))
-		|| OK > printf(str, ph->id)
-		|| OK != pthread_mutex_unlock(&ph->s->print))
-		return (ERR);
-	return (OK);
-}
-
-static int	eat(t_philo *ph, t_state *s)
-{
-	if (OK == pthread_mutex_lock(ph->fork_1)
-		&& OK == safe_print("Philo %zu grabbed a fork!!!", ph)
-		&& OK == pthread_mutex_lock(ph->fork_2)
-		&& OK == safe_print("Philo %zu grabbed a fork!!!", ph)
-		&& OK == safe_print("Philo %zu is eating!!!", ph)
-		&& OK == wait_and_watch(s->t_eat, &s->end, &s->tv)
-		&& OK == pthread_mutex_unlock(ph->fork_1)
-		&& OK == pthread_mutex_unlock(ph->fork_2))
-		return (OK);
-	if (s->end)
-		return (END);
-	return (perror("Err: eat:"), ERR);
-}
-
-int	routine(void *philosopher)
+void	*routine(void *philosopher)
 {
 	t_philo	*ph;
 	t_state	*s;
@@ -52,12 +22,12 @@ int	routine(void *philosopher)
 	while (1)
 	{
 		if (OK != eat(ph, s)
-			|| OK != safe_print("Philo %zu is sleeping!!!", ph)
-			|| OK != wait_and_watch(s->t_sleep, &s->end, &s->tv)
-			|| OK != safe_print("Philo %zu is thinking!!!", ph))
+			|| OK != safe_print("Philo %zu is sleeping!!!\n", ph, s)
+			|| OK != wait_and_watch(s->t_sleep, s, &ph->time)
+			|| OK != safe_print("Philo %zu is thinking!!!\n", ph, s))
 			break ;
 	}
-	if (s->end)
-		return (END);
-	return (OK);
+	tracked_unlock(ph->fork_1, &locked[0], s);
+	tracked_unlock(ph->fork_2, &locked[1], s);
+	return (0);
 }

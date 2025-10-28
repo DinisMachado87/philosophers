@@ -16,8 +16,15 @@ HEADER	= philo.h
 DEBUGFLAGS  = -g3 -fsanitize=address
 
 SRC		= main.c \
-		  init.c \
-		  routine.c
+		  init_state.c \
+		  init_forks.c \
+		  init_philos.c \
+		  routine.c \
+		  monitor.c \
+		  ft_atoll.c \
+		  set_and_print_error.c \
+		  eat.c \
+		  utils.c
 OBJ		= $(SRC:.c=.o)
 
 all: $(NAME)

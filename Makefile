@@ -1,50 +1,63 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2025/09/29 19:25:16 by dimachad          #+#    #+#              #
-#    Updated: 2025/09/30 19:37:19 by dimachad         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
+NAME        = philo
+CC          = cc
+CFLAGS      = -Wall -Werror -Wextra -pthread
+DEBUGFLAGS  = -g
+HEADER      = philo.h
+INCLUDES    = .
 
-NAME	= philo
-CFLAGS 	= cc -Wall -Werror -Wextra
-HEADER	= philo.h
-DEBUGFLAGS  = -g3 -fsanitize=address
+SRC         = src/main.c \
+			  src/eat.c \
+			  src/routine.c \
+			  src/monitor.c \
+			  src/free_all.c \
+			  src_init/init_state.c \
+			  src_init/init_forks.c \
+			  src_init/init_philos.c \
+			  src_utils/ft_atoll.c \
+			  src_utils/mtx_utils.c \
+			  src_utils/init_utils.c \
+			  src_utils/utils.c
 
-SRC		= main.c \
-		  init_state.c \
-		  init_forks.c \
-		  init_philos.c \
-		  routine.c \
-		  monitor.c \
-		  ft_atoll.c \
-		  set_and_print_error.c \
-		  eat.c \
-		  utils.c
-OBJ		= $(SRC:.c=.o)
+OBJDIR      = obj
+OBJDIR_DEBUG= obj_debug
+
+OBJ         = $(addprefix $(OBJDIR)/,$(notdir $(SRC:.c=.o)))
+OBJ_DEBUG   = $(addprefix $(OBJDIR_DEBUG)/,$(notdir $(SRC:.c=.o)))
+
+$(shell mkdir -p $(OBJDIR) $(OBJDIR_DEBUG))
 
 all: $(NAME)
 
 $(NAME): $(OBJ)
-	$(CFLAGS) $(OBJ) -o $(NAME)
+	$(CC) $(CFLAGS) -I$(INCLUDES) $(OBJ) -o $(NAME)
 
-%.o: %.c $(HEADER)
-	$(CFLAGS) -c $< -o $@
+debug: $(OBJ_DEBUG)
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -I$(INCLUDES) $(OBJ_DEBUG) -o $(NAME)_debug
 
-debug: fclean
-	$(CFLAGS) $(DEBUGFLAGS) $(SRC) -o $(NAME)
+$(OBJDIR)/%.o: src/%.c $(HEADER)
+	$(CC) $(CFLAGS) -I$(INCLUDES) -c $< -o $@
+
+$(OBJDIR)/%.o: src_init/%.c $(HEADER)
+	$(CC) $(CFLAGS) -I$(INCLUDES) -c $< -o $@
+
+$(OBJDIR)/%.o: src_utils/%.c $(HEADER)
+	$(CC) $(CFLAGS) -I$(INCLUDES) -c $< -o $@
+
+$(OBJDIR_DEBUG)/%.o: src/%.c $(HEADER)
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -I$(INCLUDES) -c $< -o $@
+
+$(OBJDIR_DEBUG)/%.o: src_init/%.c $(HEADER)
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -I$(INCLUDES) -c $< -o $@
+
+$(OBJDIR_DEBUG)/%.o: src_utils/%.c $(HEADER)
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -I$(INCLUDES) -c $< -o $@
 
 clean:
-	rm -f $(OBJ)
+	rm -rf $(OBJDIR) $(OBJDIR_DEBUG)
 
 fclean: clean
-	rm -f $(NAME)
+	rm -f $(NAME) $(NAME)_debug
 
 re: fclean all
 
 .PHONY: all clean fclean re debug
-

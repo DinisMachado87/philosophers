@@ -6,58 +6,56 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/28 15:25:40 by dimachad          #+#    #+#             */
-/*   Updated: 2025/10/28 16:02:58 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/01 03:31:34 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-static inline int	tracked_lock(pthread_mutex_t *fork, int *locked,
+static inline int	lock_fork(pthread_mutex_t *fork, int *locked,
 							t_philo *ph, t_state *s)
 {
-	if (OK == pthread_mutex_lock(fork))
+	if (OK == mtx_lock_tracked(fork, s))
 	{
 		*locked = 1;
 		if (is_end(s))
 			return (END);
-		if (OK == safe_print("Philo %lld grabbed a fork!!!\n", ph, s))
-			return (OK);
+		return (safe_print("has taken a fork\n", ph, s));
 	}
-	return (set_and_print_error(s, "Err locking fork"));
+	return (ERR);
 }
 
-static inline int	tracked_unlock(
+static inline int	unlock_fork(
 	pthread_mutex_t *fork, int *locked, t_state *s)
 {
-	if (locked
-		&& OK != pthread_mutex_unlock(fork))
-		set_and_print_error(s, "Err unlocking fork\n");
+	if (*locked)
+		mtx_unlock_tracked(fork, s);
 	*locked = 0;
-	return (is_end(s));
+	return (OK);
 }
 
 static inline void	safe_update_last_meal(t_philo *ph, t_state *s)
 {
-	pthread_mutex_lock(&ph->mtx_philo);
-	ph->last_meal = now(&ph->time, s);
+	mtx_lock_tracked(&ph->mtx_philo, s);
+	ph->nxt_death = now(&ph->time, s) + s->t_die;
 	ph->n_eats++;
-	pthread_mutex_unlock(&ph->mtx_philo);
+	mtx_unlock_tracked(&ph->mtx_philo, s);
 }
 
 int	eat(t_philo *ph, t_state *s)
 {
-	int		locked[2];
+	int		locked_1;
+	int		locked_2;
 
-	locked[0] = 0;
-	locked[1] = 0;
-	if (OK != tracked_lock(ph->fork_1, &locked[0], ph, s)
-		|| OK != tracked_lock(ph->fork_2, &locked[1], ph, s)
-		|| OK != safe_print("Philo %zu is eating!!!\n", ph, s))
-	{
-		wait_and_watch(s->t_eat, s, &ph->time);
-	}
-	tracked_unlock(ph->fork_1, &locked[0], s);
-	tracked_unlock(ph->fork_2, &locked[1], s);
-	safe_update_last_meal(ph, s);
+	locked_1 = 0;
+	locked_2 = 0;
+	if (OK == lock_fork(ph->fork_1, &locked_1, ph, s)
+		&& ph->fork_1 != ph->fork_2
+		&& OK == lock_fork(ph->fork_2, &locked_2, ph, s)
+		&& OK == safe_print("is eating\n", ph, s)
+		&& OK == wait_and_watch(s->t_eat, s, &ph->time))
+		safe_update_last_meal(ph, s);
+	unlock_fork(ph->fork_1, &locked_1, s);
+	unlock_fork(ph->fork_2, &locked_2, s);
 	return (is_end(s));
 }

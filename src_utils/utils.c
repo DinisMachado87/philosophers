@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/28 15:35:47 by dimachad          #+#    #+#             */
-/*   Updated: 2025/10/28 15:39:40 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/01 04:16:02 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,13 +16,16 @@ int	is_end(t_state *s)
 {
 	int	end;
 
-	pthread_mutex_lock(&s->mtx_end);
-	end = s->end;
-	pthread_mutex_unlock(&s->mtx_end);
+	mtx_lock_tracked(&s->state_mtx, s);
+	if (s->err)
+		end = s->err;
+	else
+		end = s->end;
+	mtx_unlock_tracked(&s->state_mtx, s);
 	return (end);
 }
 
-int	now(struct timeval *time, t_state *s)
+long long	now(struct timeval *time, t_state *s)
 {
 	long long	sec_to_milisec;
 	long long	microsec_to_milisec;
@@ -54,16 +57,29 @@ int	safe_print(char *str, t_philo *ph, t_state *s)
 {
 	long long	time;
 
-	if (is_end(s))
-		return (END);
-	if (OK != gettimeofday(&ph->time, NULL))
-	{
-		time = ph->time.tv_sec * 1000LL + ph->time.tv_usec / 1000;
-		if (OK == pthread_mutex_lock(&s->print)
-			&& OK < printf("%lld ", time)
-			&& OK < printf(str, ph->id)
-			&& OK == pthread_mutex_unlock(&s->print))
-			return (OK);
-	}
-	return (set_and_print_error(s, "Err printing"));
+	time = now(&ph->time, s);
+	if (OK == mtx_lock_tracked(&s->state_mtx, s)
+		&& OK < printf("%lld %lld %s\n", time, ph->id, str)
+		&& OK == mtx_unlock_tracked(&s->state_mtx, s))
+		return (is_end(s));
+	return (set_and_print_error(s, "Err: safe_print"));
+}
+
+/*
+** Error handler - uses raw pthread calls to avoid recursion.
+** Tracked mutex wrappers call this on failure, so this must not call them.
+*/
+int	set_and_print_error(t_state *s, char *str)
+{
+	int	len;
+
+	len = 0;
+	while (str[len])
+		len++;
+	pthread_mutex_lock(&s->state_mtx);
+	s->err = ERR;
+	s->end = END;
+	write(2, str, len);
+	pthread_mutex_unlock(&s->state_mtx);
+	return (ERR);
 }

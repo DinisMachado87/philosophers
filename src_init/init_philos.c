@@ -6,14 +6,16 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:43:48 by dimachad          #+#    #+#             */
-/*   Updated: 2025/10/28 01:44:29 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/01 03:36:41 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+#include <pthread.h>
+#include <stdio.h>
 
 static void	assign_forks(t_philo *ph,
-	pthread_mutex_t *right, pthread_mutex_t *left)
+	pthread_mutex_t *left, pthread_mutex_t *right)
 {
 	if (ph->id % 2 == 0)
 	{
@@ -27,26 +29,26 @@ static void	assign_forks(t_philo *ph,
 	}
 }
 
-int	init_philos(t_philo **phs, t_state *s)
+int	init_philos(t_philo *ph, t_state *s)
 {
-	const char	*err_str = "Err: init_philos: ";
-	t_philo		*ph;
 	long long	i;
+	int			right;
 
 	i = 0;
-	*phs = malloc(s->n_philos * sizeof(t_philo));
-	if (!*phs)
-		return (perror(err_str), ERR);
-	ph = *phs;
 	while (i < s->n_philos)
 	{
-		ph[i].id = i;
+		ph[i].track = 0;
+		ph[i].id = i + 1;
 		ph[i].s = s;
-		assign_forks(&ph[i],
-			&s->forks[i - 1],
-			&s->forks[(i + 1) % s->n_philos]);
-		if (OK != pthread_create(&ph[i].life, NULL, routine, (void *)&ph[i]))
-			return (perror(err_str), ERR);
+		ph[i].nxt_death = s->start + s->t_die;
+		ph[i].n_eats = 0;
+		right = (i + 1) % s->n_philos;
+		assign_forks(&ph[i], &s->mtx_forks[i], &s->mtx_forks[right]);
+		if (OK != track(&ph[i].track, PHILO_MTX, s,
+				pthread_mutex_init(&ph[i].mtx_philo, NULL))
+			|| OK != track(&ph[i].track, PHILO_THRD, s,
+				pthread_create(&ph[i].life, NULL, routine, &ph[i])))
+			return (ERR);
 		i++;
 	}
 	return (OK);

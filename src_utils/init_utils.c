@@ -1,24 +1,22 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   set_and_print_error.c                              :+:      :+:    :+:   */
+/*   init_utils.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/27 21:28:59 by dimachad          #+#    #+#             */
-/*   Updated: 2025/10/28 01:20:58 by dimachad         ###   ########.fr       */
+/*   Created: 2025/10/31 15:48:37 by dimachad          #+#    #+#             */
+/*   Updated: 2025/10/31 16:47:29 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+#include <stddef.h>
 
-int	set_and_print_error(t_state *s, char *str)
+int	safe_malloc(void **ptr, size_t size, t_state *s)
 {
-	pthread_mutex_lock(&s->mtx_end);
-	s->end = ERR;
-	pthread_mutex_unlock(&s->mtx_end);
-	pthread_mutex_lock(&s->print);
-	printf(str);
-	pthread_mutex_unlock(&s->print);
-	return (ERR);
+	*ptr = malloc(size);
+	if (!*ptr)
+		return (set_and_print_error(s, "Error: Malloc\n"));
+	return (OK);
 }

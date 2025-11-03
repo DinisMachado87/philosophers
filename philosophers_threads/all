@@ -1,0 +1,747 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   all                                                :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/28 15:25:40 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/01 04:30:27 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+
+static inline int	lock_fork(pthread_mutex_t *fork, int *locked,
+							t_philo *ph, t_state *s)
+{
+	if (OK == mtx_lock_tracked(fork, s))
+	{
+		*locked = 1;
+		if (is_end(s))
+			return (END);
+		return (safe_print("has taken a fork\n", ph, s));
+	}
+	return (ERR);
+}
+
+static inline int	unlock_fork(
+	pthread_mutex_t *fork, int *locked, t_state *s)
+{
+	if (*locked)
+		mtx_unlock_tracked(fork, s);
+	*locked = 0;
+	return (OK);
+}
+
+static inline int	safe_update_last_meal(t_philo *ph, t_state *s)
+{
+	mtx_lock_tracked(&ph->mtx_philo, s);
+	ph->nxt_death = now(&ph->time, s) + s->t_die;
+	ph->n_eats++;
+	mtx_unlock_tracked(&ph->mtx_philo, s);
+	return (is_end(s));
+}
+
+int	eat(t_philo *ph, t_state *s)
+{
+	int		locked_1;
+	int		locked_2;
+
+	locked_1 = 0;
+	locked_2 = 0;
+	if (OK == lock_fork(ph->fork_1, &locked_1, ph, s)
+		&& ph->fork_1 != ph->fork_2
+		&& OK == lock_fork(ph->fork_2, &locked_2, ph, s)
+		&& OK == safe_update_last_meal(ph, s)
+		&& OK == safe_print("is eating\n", ph, s))
+		wait_and_watch(s->t_eat, s, &ph->time);
+	unlock_fork(ph->fork_1, &locked_1, s);
+	unlock_fork(ph->fork_2, &locked_2, s);
+	return (is_end(s));
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   free_all.c                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/29 23:05:22 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/01 03:35:33 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+#include <pthread.h>
+#include <unistd.h>
+
+void	*free_and_null(void *ptr)
+{
+	if (ptr)
+		free(ptr);
+	return (NULL);
+}
+
+void	free_philos_and_forks(t_state *s)
+{
+	long long	i;
+
+	i = 0;
+	while (i < s->n_philos && s->philos)
+	{
+		if (s->philos[i].track & (1 << FORK_MTX))
+			pthread_mutex_destroy(&s->mtx_forks[i]);
+		if (s->philos[i].track & (1 << PHILO_THRD))
+			pthread_join(s->philos[i].life, NULL);
+		if (s->philos[i].track & (1 << PHILO_MTX))
+			pthread_mutex_destroy(&s->philos[i].mtx_philo);
+		i++;
+	}
+	s->philos = free_and_null(s->philos);
+	s->mtx_forks = free_and_null(s->mtx_forks);
+}
+
+void	free_all(t_state *s)
+{
+	free_philos_and_forks(s);
+	if (s->track & (1 << STATE_MTX))
+		pthread_mutex_destroy(&s->state_mtx);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   init_forks.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/27 17:44:59 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/01 02:44:44 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+
+int	init_forks(t_state *s)
+{
+	ssize_t		i;
+
+	i = 0;
+	while (i < s->n_philos)
+	{
+		if (OK != track(&s->philos[i].track, FORK_MTX, s,
+				pthread_mutex_init(&s->mtx_forks[i], NULL)))
+			return (ERR);
+		i++;
+	}
+	return (OK);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   init_philos.c                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/27 17:43:48 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/01 03:36:41 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+#include <pthread.h>
+#include <stdio.h>
+
+static void	assign_forks(t_philo *ph,
+	pthread_mutex_t *left, pthread_mutex_t *right)
+{
+	if (ph->id % 2 == 0)
+	{
+		ph->fork_1 = right;
+		ph->fork_2 = left;
+	}
+	else
+	{
+		ph->fork_1 = left;
+		ph->fork_2 = right;
+	}
+}
+
+int	init_philos(t_philo *ph, t_state *s)
+{
+	long long	i;
+	int			right;
+
+	i = 0;
+	while (i < s->n_philos)
+	{
+		ph[i].track = 0;
+		ph[i].id = i + 1;
+		ph[i].s = s;
+		ph[i].nxt_death = s->start + s->t_die;
+		ph[i].n_eats = 0;
+		right = (i + 1) % s->n_philos;
+		assign_forks(&ph[i], &s->mtx_forks[i], &s->mtx_forks[right]);
+		if (OK != track(&ph[i].track, PHILO_MTX, s,
+				pthread_mutex_init(&ph[i].mtx_philo, NULL))
+			|| OK != track(&ph[i].track, PHILO_THRD, s,
+				pthread_create(&ph[i].life, NULL, routine, &ph[i])))
+			return (ERR);
+		i++;
+	}
+	return (OK);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   init_state.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/29 23:00:57 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/01 03:11:09 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+
+inline static int	parse_attoll(long long *value, char *str,
+							int allow_zero)
+{
+	*value = ft_atoll(str);
+	if (*value < 0 || (!allow_zero && *value == 0))
+	{
+		printf("Err: arg '0' or not pos long long\n");
+		return (ERR);
+	}
+	return (OK);
+}
+
+int	init_state(int argc, char **argv, t_state *s)
+{
+	s->end = 0;
+	s->err = 0;
+	if (OK != parse_attoll(&s->n_philos, argv[1], 0)
+		|| OK != parse_attoll(&s->t_die, argv[2], 0)
+		|| OK != parse_attoll(&s->t_eat, argv[3], 0)
+		|| OK != parse_attoll(&s->t_sleep, argv[4], 0)
+		|| (argc == 6
+			&& OK != parse_attoll(&s->n_eats, argv[5], 1)))
+		return (ERR);
+	if (argc == 5)
+		s->n_eats = 0;
+	return (OK);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/29 19:25:28 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/01 03:36:02 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+
+int	allocate_philos_and_forks(t_state *s)
+{
+	size_t	size_forks;
+	size_t	size_philos;
+
+	size_forks = s->n_philos * sizeof(pthread_mutex_t);
+	size_philos = s->n_philos * sizeof(t_philo);
+	if (OK == safe_malloc((void **)&s->mtx_forks, size_forks, s)
+		&& OK == safe_malloc((void **)&s->philos, size_philos, s))
+		return (OK);
+	return (set_and_print_error(s, "Error: Malloc philos and forks"));
+}
+
+/* number_of_philosophers time_to_die time_to_eat
+ * time_to_sleep, [number_of_times_each_philosopher_must_eat]`
+ */
+int	main(int argc, char **argv)
+{
+	const char	*err_str = "Usage %s: "
+		"n_philo, t_die, t_eat, t_sleep, [opt:n_eats]\n";
+	t_state		s;
+
+	if (argc != 5 && argc != 6)
+		return (printf(err_str, argv[0]), ERR);
+	s.track = 0;
+	s.start = now(&s.time, &s);
+	if (OK == init_state(argc, argv, &s)
+		&& OK == track(&s.track, STATE_MTX, &s,
+			pthread_mutex_init(&s.state_mtx, NULL))
+		&& OK == allocate_philos_and_forks(&s)
+		&& OK == init_forks(&s)
+		&& OK == init_philos(s.philos, &s))
+		monitor(&s);
+	free_all(&s);
+	return (s.err);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   monitor.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/27 17:29:37 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/01 04:18:16 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+#include <unistd.h>
+
+static int	are_philos_full(t_state *s, t_philo *phs)
+{
+	const long long	must_eats = s->n_eats;
+	long long		n_meals;
+	long long		i;
+
+	i = 0;
+	while (i < s->n_philos)
+	{
+		mtx_lock_tracked(&phs[i].mtx_philo, s);
+		n_meals = phs[i].n_eats;
+		mtx_unlock_tracked(&phs[i].mtx_philo, s);
+		if (n_meals < must_eats)
+			return (0);
+		i++;
+	}
+	return (END);
+}
+
+static int	are_dead_philos(t_state *s, t_philo *phs)
+{
+	const long long	cur_time = now(&s->time, s);
+	long long		i;
+
+	i = 0;
+	while (i < s->n_philos)
+	{
+		mtx_lock_tracked(&phs[i].mtx_philo, s);
+		if (phs[i].nxt_death < cur_time)
+		{
+			mtx_unlock_tracked(&phs[i].mtx_philo, s);
+			safe_print("died\n", &phs[i], s);
+			return (END);
+		}
+		mtx_unlock_tracked(&phs[i].mtx_philo, s);
+		i++;
+	}
+	return (OK);
+}
+
+static int	set_end(t_state *s)
+{
+	pthread_mutex_lock(&s->state_mtx);
+	s->end = END;
+	pthread_mutex_unlock(&s->state_mtx);
+	return (END);
+}
+
+void	monitor(t_state *s)
+{
+	t_philo	*phs;
+
+	phs = s->philos;
+	while (!is_end(s))
+	{
+		if (are_dead_philos(s, phs)
+			|| (s->n_eats > 0 && are_philos_full(s, phs)))
+			set_end(s);
+		usleep(100);
+	}
+	return ;
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   routine.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/30 19:08:23 by dimachad          #+#    #+#             */
+/*   Updated: 2025/10/31 18:00:58 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+
+void	*routine(void *philosopher)
+{
+	t_philo	*ph;
+	t_state	*s;
+
+	ph = (t_philo *)philosopher;
+	s = ph->s;
+	while (1)
+	{
+		if (OK != eat(ph, s)
+			|| OK != safe_print("is sleeping\n", ph, s)
+			|| OK != wait_and_watch(s->t_sleep, s, &ph->time)
+			|| OK != safe_print("is thinking\n", ph, s))
+			break ;
+	}
+	return (0);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ft_atoll.c                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/27 15:56:17 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/01 03:08:39 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+
+static int	is_space(char c)
+{
+	return (c == ' '
+		|| (c >= '\t' && c <= '\r'));
+}
+
+long long	ft_atoll(char *str_num)
+{
+	char		*str;
+	long long	n;
+	int			digit;
+
+	str = str_num;
+	n = 0;
+	while (is_space(*str))
+		str++;
+	if (*str == '-')
+		return (printf("Err: ft_atoll: Negative arg\n"), ERR);
+	if (*str == '+')
+		str++;
+	while (*str >= '0' && *str <= '9')
+	{
+		digit = *str++ - '0';
+		if (n > (LLONG_MAX - digit) / 10)
+			return (
+				printf("Err: ft_atoll: Overflow\n"),
+				ERR);
+		n = n * 10 + digit;
+	}
+	if (*str)
+		return (printf("Err: ft_atoll: Arg w/ invalid chars\n"), ERR);
+	return (n);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   init_utils.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/31 15:48:37 by dimachad          #+#    #+#             */
+/*   Updated: 2025/10/31 16:47:29 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+#include <stddef.h>
+
+int	safe_malloc(void **ptr, size_t size, t_state *s)
+{
+	*ptr = malloc(size);
+	if (!*ptr)
+		return (set_and_print_error(s, "Error: Malloc\n"));
+	return (OK);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   mtx_utils.c                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/29 12:08:49 by dimachad          #+#    #+#             */
+/*   Updated: 2025/10/31 14:14:57 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+#include <bits/pthreadtypes.h>
+#include <pthread.h>
+
+int	mtx_lock_tracked(pthread_mutex_t *mtx, t_state *s)
+{
+	if (OK != pthread_mutex_lock(mtx))
+		return (set_and_print_error(s, "Error: Mutex lock failure"));
+	return (OK);
+}
+
+int	mtx_unlock_tracked(pthread_mutex_t *mtx, t_state *s)
+{
+	if (OK != pthread_mutex_unlock(mtx))
+		return (set_and_print_error(s, "Error: Mutex lock failure"));
+	return (OK);
+}
+
+int	track(int *track, int i_tracked, t_state *s, int ret)
+{
+	if (OK == ret)
+	{
+		*track |= (1 << i_tracked);
+		return (OK);
+	}
+	return (set_and_print_error(s, "Err: init_mutex/create_thread error"));
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/28 15:35:47 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/01 04:16:02 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+
+int	is_end(t_state *s)
+{
+	int	end;
+
+	mtx_lock_tracked(&s->state_mtx, s);
+	if (s->err)
+		end = s->err;
+	else
+		end = s->end;
+	mtx_unlock_tracked(&s->state_mtx, s);
+	return (end);
+}
+
+long long	now(struct timeval *time, t_state *s)
+{
+	long long	sec_to_milisec;
+	long long	microsec_to_milisec;
+
+	if (OK != gettimeofday(time, NULL))
+		return (set_and_print_error(s, "Error getting time"));
+	sec_to_milisec = time->tv_sec * 1000LL;
+	microsec_to_milisec = time->tv_usec / 1000;
+	return (sec_to_milisec + microsec_to_milisec);
+}
+
+int	wait_and_watch(size_t duration, t_state *s, struct timeval *time)
+{
+	long long	sleep_end;
+	int			end;
+
+	sleep_end = now(time, s) + duration;
+	while (now(time, s) < sleep_end)
+	{
+		end = is_end(s);
+		if (end)
+			return (end);
+		usleep(500);
+	}
+	return (OK);
+}
+
+int	safe_print(char *str, t_philo *ph, t_state *s)
+{
+	long long	time;
+
+	time = now(&ph->time, s);
+	if (OK == mtx_lock_tracked(&s->state_mtx, s)
+		&& OK < printf("%lld %lld %s\n", time, ph->id, str)
+		&& OK == mtx_unlock_tracked(&s->state_mtx, s))
+		return (is_end(s));
+	return (set_and_print_error(s, "Err: safe_print"));
+}
+
+/*
+** Error handler - uses raw pthread calls to avoid recursion.
+** Tracked mutex wrappers call this on failure, so this must not call them.
+*/
+int	set_and_print_error(t_state *s, char *str)
+{
+	int	len;
+
+	len = 0;
+	while (str[len])
+		len++;
+	pthread_mutex_lock(&s->state_mtx);
+	s->err = ERR;
+	s->end = END;
+	write(2, str, len);
+	pthread_mutex_unlock(&s->state_mtx);
+	return (ERR);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   philo.h                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/01 03:33:35 by dimachad         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#ifndef PHILO_H
+# define PHILO_H
+
+# define ERR	-1
+# define OK		0
+# define END	1
+
+# include <stdio.h>
+# include <limits.h>
+# include <stddef.h>
+# include <stdlib.h>
+# include <pthread.h>
+# include <sys/time.h>
+# include <unistd.h>
+
+typedef struct s_philosopher	t_philo;
+
+enum e_track_philo
+{
+	FORK_MTX,
+	PHILO_MTX,
+	PHILO_THRD,
+};
+
+enum e_track_state
+{
+	STATE_MTX,
+};
+
+typedef struct s_state
+{
+	long long		n_philos;
+	long long		t_die;
+	long long		t_eat;
+	long long		t_sleep;
+	long long		n_eats;
+	long long		start;
+	int				end;
+	int				err;
+	pthread_mutex_t	state_mtx;
+	pthread_mutex_t	*mtx_forks;
+	t_philo			*philos;
+	struct timeval	time;
+	int				track;
+}	t_state;
+
+struct s_philosopher
+{
+	t_state			*s;
+	long long		id;
+	long long		nxt_death;
+	long long		n_eats;
+	pthread_mutex_t	mtx_philo;
+	pthread_mutex_t	*fork_1;
+	pthread_mutex_t	*fork_2;
+	pthread_t		life;
+	struct timeval	time;
+	int				track;
+};
+
+// init
+int			init_state(int argc, char **argv, t_state *s);
+int			init_forks(t_state *s);
+int			init_philos(t_philo *ph, t_state *s);
+
+int			safe_malloc(void **ptr, size_t size, t_state *s);
+// src
+int			eat(t_philo *ph, t_state *s);
+void		*routine(void *philosopher);
+void		monitor(t_state *s);
+// utils
+int			is_end(t_state *s);
+long long	now(struct timeval *time, t_state *s);
+int			wait_and_watch(size_t duration, t_state *s, struct timeval *tv);
+int			safe_print(char *str, t_philo *ph, t_state *s);
+int			set_and_print_error(t_state *s, char *str);
+
+int			mtx_lock_tracked(pthread_mutex_t *mtx, t_state *s);
+int			mtx_unlock_tracked(pthread_mutex_t *mtx, t_state *s);
+int			track(int *track, int i_tracked, t_state *s, int ret);
+
+long long	ft_atoll(char *str_num);
+
+void		free_track_arrs(t_state *s);
+void		free_all(t_state *s);
+
+#endif
+NAME        = philo
+CC          = cc
+CFLAGS      = -Wall -Werror -Wextra -pthread
+DEBUGFLAGS  = -g
+HEADER      = philo.h
+INCLUDES    = .
+
+SRC         = src/main.c \
+			  src/eat.c \
+			  src/routine.c \
+			  src/monitor.c \
+			  src/free_all.c \
+			  src_init/init_state.c \
+			  src_init/init_forks.c \
+			  src_init/init_philos.c \
+			  src_utils/ft_atoll.c \
+			  src_utils/mtx_utils.c \
+			  src_utils/init_utils.c \
+			  src_utils/utils.c
+
+OBJDIR      = obj
+OBJDIR_DEBUG= obj_debug
+
+OBJ         = $(addprefix $(OBJDIR)/,$(notdir $(SRC:.c=.o)))
+OBJ_DEBUG   = $(addprefix $(OBJDIR_DEBUG)/,$(notdir $(SRC:.c=.o)))
+
+$(shell mkdir -p $(OBJDIR) $(OBJDIR_DEBUG))
+
+all: $(NAME)
+
+$(NAME): $(OBJ)
+	$(CC) $(CFLAGS) -I$(INCLUDES) $(OBJ) -o $(NAME)
+
+debug: $(OBJ_DEBUG)
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -I$(INCLUDES) $(OBJ_DEBUG) -o $(NAME)_debug
+
+$(OBJDIR)/%.o: src/%.c $(HEADER)
+	$(CC) $(CFLAGS) -I$(INCLUDES) -c $< -o $@
+
+$(OBJDIR)/%.o: src_init/%.c $(HEADER)
+	$(CC) $(CFLAGS) -I$(INCLUDES) -c $< -o $@
+
+$(OBJDIR)/%.o: src_utils/%.c $(HEADER)
+	$(CC) $(CFLAGS) -I$(INCLUDES) -c $< -o $@
+
+$(OBJDIR_DEBUG)/%.o: src/%.c $(HEADER)
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -I$(INCLUDES) -c $< -o $@
+
+$(OBJDIR_DEBUG)/%.o: src_init/%.c $(HEADER)
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -I$(INCLUDES) -c $< -o $@
+
+$(OBJDIR_DEBUG)/%.o: src_utils/%.c $(HEADER)
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -I$(INCLUDES) -c $< -o $@
+
+clean:
+	rm -rf $(OBJDIR) $(OBJDIR_DEBUG)
+
+fclean: clean
+	rm -f $(NAME) $(NAME)_debug
+
+re: fclean all
+
+.PHONY: all clean fclean re debug

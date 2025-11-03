@@ -1,27 +1,37 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   init_forks.c                                       :+:      :+:    :+:   */
+/*   init_philosophers_bonus.c                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/27 17:44:59 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/01 02:44:44 by dimachad         ###   ########.fr       */
+/*   Created: 2025/11/02 00:59:42 by dimachad          #+#    #+#             */
+/*   Updated: 2025/11/02 05:47:26 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philo.h"
+#include "philo_bonus.h"
 
-int	init_forks(t_state *s)
+int	init_philosophers(t_state *s)
 {
-	ssize_t		i;
+	long long	i;
+	t_philo		ph;
 
+	memset(s->pids, 0, sizeof(pid_t) * s->n_philos);
 	i = 0;
 	while (i < s->n_philos)
 	{
-		if (OK != track(&s->philos[i].track, FORK_MTX, s,
-				pthread_mutex_init(&s->mtx_forks[i], NULL)))
-			return (ERR);
+		s->pids[i] = fork();
+		if (s->pids[i] < 0)
+			return (set_and_print_error(s, "Error: fork failed\n"));
+		if (s->pids[i] == 0)
+		{
+			ph.id = i + 1;
+			ph.nxt_death = s->start + s->t_die;
+			ph.n_eats = 0;
+			ph.s = s;
+			philo_routine(&ph);
+		}
 		i++;
 	}
 	return (OK);

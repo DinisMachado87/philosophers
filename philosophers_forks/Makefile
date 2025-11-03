@@ -2,21 +2,19 @@ NAME        = philo
 CC          = cc
 CFLAGS      = -Wall -Werror -Wextra -pthread
 DEBUGFLAGS  = -g
-HEADER      = philo.h
+HEADER      = philo_bonus.h
 INCLUDES    = .
 
-SRC         = src/main.c \
-			  src/eat.c \
-			  src/routine.c \
-			  src/monitor.c \
-			  src/free_all.c \
-			  src_init/init_state.c \
-			  src_init/init_forks.c \
-			  src_init/init_philos.c \
-			  src_utils/ft_atoll.c \
-			  src_utils/mtx_utils.c \
-			  src_utils/init_utils.c \
-			  src_utils/utils.c
+SRC			= src/main_bonus.c \
+			  src/routine_bonus.c \
+			  src/monitor_bonus.c \
+			  src/free_all_bonus.c \
+			  src_init/init_state_bonus.c \
+			  src_init/init_semaphores_bonus.c \
+			  src_init/init_philosophers_bonus.c \
+			  src_utils/ft_atoll_bonus.c \
+			  src_utils/sem_utils_bonus.c \
+			  src_utils/utils_bonus.c
 
 OBJDIR      = obj
 OBJDIR_DEBUG= obj_debug

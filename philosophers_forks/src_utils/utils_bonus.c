@@ -1,29 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   utils.c                                            :+:      :+:    :+:   */
+/*   utils_bonus.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/28 15:35:47 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/01 04:16:02 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/02 04:47:12 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philo.h"
-
-int	is_end(t_state *s)
-{
-	int	end;
-
-	mtx_lock_tracked(&s->state_mtx, s);
-	if (s->err)
-		end = s->err;
-	else
-		end = s->end;
-	mtx_unlock_tracked(&s->state_mtx, s);
-	return (end);
-}
+#include "philo_bonus.h"
 
 long long	now(struct timeval *time, t_state *s)
 {
@@ -31,7 +18,7 @@ long long	now(struct timeval *time, t_state *s)
 	long long	microsec_to_milisec;
 
 	if (OK != gettimeofday(time, NULL))
-		return (set_and_print_error(s, "Error getting time"));
+		return (set_and_print_error(s, "Error: gettimeofday failed\n"));
 	sec_to_milisec = time->tv_sec * 1000LL;
 	microsec_to_milisec = time->tv_usec / 1000;
 	return (sec_to_milisec + microsec_to_milisec);
@@ -40,14 +27,12 @@ long long	now(struct timeval *time, t_state *s)
 int	wait_and_watch(size_t duration, t_state *s, struct timeval *time)
 {
 	long long	sleep_end;
-	int			end;
 
 	sleep_end = now(time, s) + duration;
 	while (now(time, s) < sleep_end)
 	{
-		end = is_end(s);
-		if (end)
-			return (end);
+		if (is_end(s))
+			return (END);
 		usleep(500);
 	}
 	return (OK);
@@ -57,18 +42,24 @@ int	safe_print(char *str, t_philo *ph, t_state *s)
 {
 	long long	time;
 
-	time = now(&ph->time, s);
-	if (OK == mtx_lock_tracked(&s->state_mtx, s)
-		&& OK < printf("%lld %lld %s\n", time, ph->id, str)
-		&& OK == mtx_unlock_tracked(&s->state_mtx, s))
+	time = now(&ph->time, s) - s->start;
+	if (OK == safe_sem_wait(s->sem_write, s))
+	{
+		if (!is_end(s))
+			printf("%lld %lld %s\n", time, ph->id, str);
+		safe_sem_post(s->sem_write, s);
 		return (is_end(s));
-	return (set_and_print_error(s, "Err: safe_print"));
+	}
+	return (set_and_print_error(s, "Error: safe_print\n"));
 }
 
-/*
-** Error handler - uses raw pthread calls to avoid recursion.
-** Tracked mutex wrappers call this on failure, so this must not call them.
-*/
+int	is_end(t_state *s)
+{
+	if (s->err || s->end)
+		return (1);
+	return (0);
+}
+
 int	set_and_print_error(t_state *s, char *str)
 {
 	int	len;
@@ -76,10 +67,8 @@ int	set_and_print_error(t_state *s, char *str)
 	len = 0;
 	while (str[len])
 		len++;
-	pthread_mutex_lock(&s->state_mtx);
 	s->err = ERR;
 	s->end = END;
 	write(2, str, len);
-	pthread_mutex_unlock(&s->state_mtx);
 	return (ERR);
 }

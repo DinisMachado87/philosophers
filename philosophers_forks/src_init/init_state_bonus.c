@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 23:00:57 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/02 04:34:06 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/04 14:30:50 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,6 @@ int	init_state(int argc, char **argv, t_state *s)
 	s->end = 0;
 	s->err = 0;
 	s->track = 0;
-	s->pids = NULL;
 	s->sem_forks = SEM_FAILED;
 	s->sem_write = SEM_FAILED;
 	if (OK != parse_attoll(&s->n_philos, argv[1], 0)
@@ -40,6 +39,8 @@ int	init_state(int argc, char **argv, t_state *s)
 		return (ERR);
 	if (argc == 5)
 		s->n_eats = 0;
-	s->start = now(&s->time, s);
+	s->start = now(&s->time);
+	if (OK != safe_calloc((void **)&s->pids, (sizeof(pid_t) * s->n_philos)))
+		return (ERR);
 	return (OK);
 }

@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/28 15:35:47 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/04 14:32:28 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/04 15:31:55 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,28 +25,9 @@ long long	now(struct timeval *time)
 	return (sec_to_milisec + microsec_to_milisec);
 }
 
-int	wait_and_watch(size_t duration, struct timeval *time, t_philo *ph)
+int	wait_and_watch(size_t duration)
 {
-	t_state		*s;
-	long long	sleep_end;
-	long long	cur_time;
-	long long	next_death;
-
-	s = ph->s;
-	cur_time = now(time);
-	sleep_end = cur_time + duration;
-	next_death = ph->nxt_death;
-	while (cur_time < sleep_end)
-	{
-		usleep(500);
-		cur_time = now(time);
-		if (cur_time > next_death)
-		{
-			safe_print("died", ph, s);
-			close_semaphores(s);
-			exit(DEAD);
-		}
-	}
+	usleep(duration * 1000);
 	return (OK);
 }
 

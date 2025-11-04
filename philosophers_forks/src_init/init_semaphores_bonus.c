@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/01 22:20:09 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/04 14:32:41 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/04 15:37:07 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,9 @@ int	init_semaphores(t_state *s)
 	if (OK != track(&s->track, SEM_FORKS,
 			safe_sem_open(&s->sem_forks, "/philo_forks", s->n_philos))
 		|| OK != track(&s->track, SEM_WRITE,
-			safe_sem_open(&s->sem_write, "/philo_write", 1)))
+			safe_sem_open(&s->sem_write, "/philo_write", 1))
+		|| OK != track(&s->track, SEM_DEATH,
+			safe_sem_open(&s->sem_death, "/philo_death", 1)))
 		return (ERR);
 	return (OK);
 }

@@ -6,19 +6,20 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/04 14:50:02 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/04 16:50:44 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef PHILO_BONUS_H
 # define PHILO_BONUS_H
 
-# define ERR		-1
-# define OK			0
+# define ERR	-1
+# define OK		0
 
 # include <stdio.h>
 # include <limits.h>
 # include <stddef.h>
+# include <pthread.h>
 # include <stdlib.h>
 # include <sys/time.h>
 # include <unistd.h>
@@ -39,6 +40,7 @@ enum e_track
 {
 	SEM_FORKS,
 	SEM_WRITE,
+	SEM_DEATH,
 };
 
 typedef struct s_state
@@ -53,6 +55,7 @@ typedef struct s_state
 	int				err;
 	sem_t			*sem_forks;
 	sem_t			*sem_write;
+	sem_t			*sem_death;
 	pid_t			*pids;
 	struct timeval	time;
 	int				track;
@@ -65,10 +68,13 @@ struct s_philosopher
 	long long		n_eats;
 	t_state			*s;
 	struct timeval	time;
+	pthread_t		monitor;
+	sem_t			*sem_death_lock;
 };
 
 // src
 void		philo_routine(t_philo *ph);
+void		*death_monitor(void *arg);
 
 // init
 int			init_state(int argc, char **argv, t_state *s);
@@ -77,14 +83,17 @@ int			init_philosophers(t_state *s);
 
 // utils
 long long	now(struct timeval *time);
-int			wait_and_watch(size_t duration, struct timeval *time, t_philo *ph);
+int			wait_and_watch(size_t duration);
 int			safe_print(char *str, t_philo *ph, t_state *s);
 int			ret_and_print_err(char *str);
 int			safe_sem_wait(sem_t *sem);
 int			safe_sem_post(sem_t *sem);
 int			track(int *track, int i_tracked, int ret);
+void		unique_name(char *buf, long long id);
 long long	ft_atoll(char *str_num);
 int			safe_calloc(void **ptr, size_t size);
+void		open_unique_sem(char *uniname, t_philo *ph, t_state *s);
+int			launch_death_monitor(t_philo *ph);
 
 // cleanup
 void		close_semaphores(t_state *s);

@@ -6,40 +6,30 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/28 15:35:47 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/05 02:18:26 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/05 14:33:58 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo_bonus.h"
 
-long long	now(struct timeval *time)
+long long	now(void)
 {
-	long long	sec_to_milisec;
-	long long	microsec_to_milisec;
+	struct timeval	time;
+	long long		sec_to_milisec;
+	long long		microsec_to_milisec;
 
-	if (OK != gettimeofday(time, NULL))
+	if (OK != gettimeofday(&time, NULL))
 		return (ret_and_print_err("Error: gettimeofday failed\n"));
-	sec_to_milisec = time->tv_sec * 1000LL;
-	microsec_to_milisec = time->tv_usec / 1000;
+	sec_to_milisec = time.tv_sec * 1000LL;
+	microsec_to_milisec = time.tv_usec / 1000;
 	return (sec_to_milisec + microsec_to_milisec);
-}
-
-int	wait_and_watch(long long duration)
-{
-	long long		start;
-	struct timeval	tv;
-
-	start = now(&tv);
-	while (now(&tv) - start < duration)
-		usleep(100);
-	return (OK);
 }
 
 int	safe_print(char *str, t_philo *ph, t_state *s)
 {
 	long long	time;
 
-	time = now(&ph->time) - s->start;
+	time = now() - s->start;
 	if (OK != safe_sem_wait(s->sem_write))
 		return (ERR);
 	printf("%lld %lld %s\n", time, ph->id, str);

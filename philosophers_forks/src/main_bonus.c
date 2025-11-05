@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:25:28 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/05 02:16:41 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/05 15:33:38 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,16 +19,18 @@ static void	handle_philosophers_exit(t_state *s)
 	int		status;
 	int		i;
 
-	// Wait for first philosopher to exit (death or full)
-	exited_pid = waitpid(-1, &status, 0);
-	
-	// If any philosopher died or had an error, kill all others
-	if (exited_pid < 0
-		|| (WIFEXITED(status) && WEXITSTATUS(status) != FULL))
-		kill_pids_left(s);
-	
-	// Wait for all remaining philosophers
 	i = 0;
+	while (i < s->n_philos)
+	{
+		exited_pid = waitpid(-1, &status, 0);
+		if (exited_pid < 0
+			|| (WIFEXITED(status) && WEXITSTATUS(status) != FULL))
+		{
+			kill_pids_left(s);
+			break ;
+		}
+		i++;
+	}
 	while (i < s->n_philos)
 	{
 		waitpid(s->pids[i], NULL, 0);

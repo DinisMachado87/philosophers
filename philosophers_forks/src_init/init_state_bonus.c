@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 23:00:57 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/05 02:14:29 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/05 14:21:30 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ int	init_state(int argc, char **argv, t_state *s)
 		return (ERR);
 	if (argc == 5)
 		s->n_eats = 0;
-	s->start = now(&s->time);
+	s->start = now();
 	if (OK != safe_calloc((void **)&s->pids, (sizeof(pid_t) * s->n_philos)))
 		return (ERR);
 	return (OK);

@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/05 02:18:59 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/05 16:00:58 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ enum e_track
 {
 	SEM_FORKS,
 	SEM_WRITE,
-	SEM_DEATH,
+	SEM_CUE,
 };
 
 typedef struct s_state
@@ -55,7 +55,7 @@ typedef struct s_state
 	int				err;
 	sem_t			*sem_forks;
 	sem_t			*sem_write;
-	sem_t			*sem_death;
+	sem_t			*sem_cue;
 	pid_t			*pids;
 	struct timeval	time;
 	int				track;
@@ -81,8 +81,7 @@ int			init_semaphores(t_state *s);
 int			init_philosophers(t_state *s);
 
 // utils
-long long	now(struct timeval *time);
-int			wait_and_watch(long long duration);
+long long	now(void);
 int			safe_print(char *str, t_philo *ph, t_state *s);
 int			ret_and_print_err(char *str);
 int			safe_sem_wait(sem_t *sem);

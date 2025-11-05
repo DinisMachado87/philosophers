@@ -6,12 +6,11 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/28 15:35:47 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/04 15:31:55 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/05 02:18:26 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo_bonus.h"
-#include <stdlib.h>
 
 long long	now(struct timeval *time)
 {
@@ -25,9 +24,14 @@ long long	now(struct timeval *time)
 	return (sec_to_milisec + microsec_to_milisec);
 }
 
-int	wait_and_watch(size_t duration)
+int	wait_and_watch(long long duration)
 {
-	usleep(duration * 1000);
+	long long		start;
+	struct timeval	tv;
+
+	start = now(&tv);
+	while (now(&tv) - start < duration)
+		usleep(100);
 	return (OK);
 }
 

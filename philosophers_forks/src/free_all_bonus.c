@@ -6,12 +6,11 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/29 23:05:22 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/04 15:39:05 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/05 02:06:40 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo_bonus.h"
-#include <signal.h>
 
 void	kill_pids_left(t_state *s)
 {

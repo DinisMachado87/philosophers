@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/04 16:50:44 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/05 02:18:59 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,7 +69,6 @@ struct s_philosopher
 	t_state			*s;
 	struct timeval	time;
 	pthread_t		monitor;
-	sem_t			*sem_death_lock;
 };
 
 // src
@@ -83,17 +82,14 @@ int			init_philosophers(t_state *s);
 
 // utils
 long long	now(struct timeval *time);
-int			wait_and_watch(size_t duration);
+int			wait_and_watch(long long duration);
 int			safe_print(char *str, t_philo *ph, t_state *s);
 int			ret_and_print_err(char *str);
 int			safe_sem_wait(sem_t *sem);
 int			safe_sem_post(sem_t *sem);
 int			track(int *track, int i_tracked, int ret);
-void		unique_name(char *buf, long long id);
 long long	ft_atoll(char *str_num);
 int			safe_calloc(void **ptr, size_t size);
-void		open_unique_sem(char *uniname, t_philo *ph, t_state *s);
-int			launch_death_monitor(t_philo *ph);
 
 // cleanup
 void		close_semaphores(t_state *s);

@@ -1,20 +1,18 @@
-NAME        = philo
+NAME        = philo_bonus
 CC          = cc
 CFLAGS      = -Wall -Werror -Wextra -pthread
 DEBUGFLAGS  = -g
 HEADER      = philo_bonus.h
 INCLUDES    = .
 
-SRC			= src/main_bonus.c \
+SRC         = src/main_bonus.c \
 			  src/routine_bonus.c \
 			  src/monitor.c \
 			  src/free_all_bonus.c \
-			  src/unique_name.c \
 			  src_init/init_state_bonus.c \
 			  src_init/init_semaphores_bonus.c \
 			  src_init/init_philosophers_bonus.c \
 			  src_utils/ft_atoll_bonus.c \
-			  src_utils/routine_utils.c \
 			  src_utils/sem_utils_bonus.c \
 			  src_utils/utils_bonus.c
 

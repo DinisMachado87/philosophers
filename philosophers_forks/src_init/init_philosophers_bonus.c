@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 00:59:42 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/04 14:52:13 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/05 02:13:28 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ int	init_philosophers(t_state *s)
 			ph.s = s;
 			philo_routine(&ph);
 		}
+		usleep(100);
 		i++;
 	}
 	return (OK);

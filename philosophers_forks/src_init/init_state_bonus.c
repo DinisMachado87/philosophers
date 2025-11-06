@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 23:00:57 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/05 14:21:30 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/06 01:18:43 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,8 +25,6 @@ static inline int	parse_attoll(long long *value, char *str, int allow_zero)
 
 int	init_state(int argc, char **argv, t_state *s)
 {
-	s->end = 0;
-	s->err = 0;
 	s->track = 0;
 	if (OK != parse_attoll(&s->n_philos, argv[1], 0)
 		|| OK != parse_attoll(&s->t_die, argv[2], 0)
@@ -37,7 +35,7 @@ int	init_state(int argc, char **argv, t_state *s)
 		return (ERR);
 	if (argc == 5)
 		s->n_eats = 0;
-	s->start = now();
+	s->start = now(NULL);
 	if (OK != safe_calloc((void **)&s->pids, (sizeof(pid_t) * s->n_philos)))
 		return (ERR);
 	return (OK);

@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/05 16:00:58 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/06 01:18:16 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,6 @@ enum e_track
 {
 	SEM_FORKS,
 	SEM_WRITE,
-	SEM_CUE,
 };
 
 typedef struct s_state
@@ -51,13 +50,9 @@ typedef struct s_state
 	long long		t_sleep;
 	long long		n_eats;
 	long long		start;
-	int				end;
-	int				err;
 	sem_t			*sem_forks;
 	sem_t			*sem_write;
-	sem_t			*sem_cue;
 	pid_t			*pids;
-	struct timeval	time;
 	int				track;
 }	t_state;
 
@@ -66,8 +61,8 @@ struct s_philosopher
 	long long		id;
 	long long		nxt_death;
 	long long		n_eats;
+	long long		cache_now;
 	t_state			*s;
-	struct timeval	time;
 	pthread_t		monitor;
 };
 
@@ -81,11 +76,13 @@ int			init_semaphores(t_state *s);
 int			init_philosophers(t_state *s);
 
 // utils
-long long	now(void);
+long long	now(t_philo *ph);
 int			safe_print(char *str, t_philo *ph, t_state *s);
+int			safe_print_two(char *str, char *str2, t_philo *ph, t_state *s);
 int			ret_and_print_err(char *str);
 int			safe_sem_wait(sem_t *sem);
 int			safe_sem_post(sem_t *sem);
+int			safe_sem_post_forks(sem_t *sem, int n, int ret);
 int			track(int *track, int i_tracked, int ret);
 long long	ft_atoll(char *str_num);
 int			safe_calloc(void **ptr, size_t size);

@@ -6,11 +6,12 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 00:59:42 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/05 02:13:28 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/06 02:21:46 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo_bonus.h"
+#include <unistd.h>
 
 int	init_philosophers(t_state *s)
 {
@@ -26,12 +27,11 @@ int	init_philosophers(t_state *s)
 		if (s->pids[i] == 0)
 		{
 			ph.id = i + 1;
-			ph.nxt_death = s->start + s->t_die;
 			ph.n_eats = 0;
+			ph.nxt_death = s->start + s->t_die;
 			ph.s = s;
 			philo_routine(&ph);
 		}
-		usleep(100);
 		i++;
 	}
 	return (OK);

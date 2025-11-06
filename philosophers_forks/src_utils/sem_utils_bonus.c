@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/01 20:38:00 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/05 14:21:32 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/06 00:29:30 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,15 @@ int	safe_sem_post(sem_t *sem)
 	return (OK);
 }
 
+int	safe_sem_post_forks(sem_t *sem, int n, int ret)
+{
+	while (n--)
+		if (OK != sem_post(sem)
+			&& OK == ret)
+			return (ret_and_print_err("Error: sem_post failure\n"));
+	return (ret);
+}
+
 int	track(int *track, int i_tracked, int ret)
 {
 	if (OK == ret)
@@ -33,7 +42,7 @@ int	track(int *track, int i_tracked, int ret)
 		*track |= (1 << i_tracked);
 		return (OK);
 	}
-	return (ret_and_print_err("Err: init_mutex/create_thread error"));
+	return (ret_and_print_err("Err: sem init error"));
 }
 
 int	safe_calloc(void **ptr, size_t size)

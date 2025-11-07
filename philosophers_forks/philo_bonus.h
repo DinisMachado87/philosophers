@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/06 01:18:16 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/07 13:18:49 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,9 @@ enum e_track
 {
 	SEM_FORKS,
 	SEM_WRITE,
+	SEM_NEXT_DEATH,
+	FORK_1,
+	FORK_2,
 };
 
 typedef struct s_state
@@ -52,6 +55,7 @@ typedef struct s_state
 	long long		start;
 	sem_t			*sem_forks;
 	sem_t			*sem_write;
+	sem_t			*sem_next_death;
 	pid_t			*pids;
 	int				track;
 }	t_state;
@@ -82,7 +86,7 @@ int			safe_print_two(char *str, char *str2, t_philo *ph, t_state *s);
 int			ret_and_print_err(char *str);
 int			safe_sem_wait(sem_t *sem);
 int			safe_sem_post(sem_t *sem);
-int			safe_sem_post_forks(sem_t *sem, int n, int ret);
+int			safe_sem_post_forks(int ret, sem_t *sem, t_state *s);
 int			track(int *track, int i_tracked, int ret);
 long long	ft_atoll(char *str_num);
 int			safe_calloc(void **ptr, size_t size);
@@ -91,6 +95,7 @@ int			safe_calloc(void **ptr, size_t size);
 void		close_semaphores(t_state *s);
 void		kill_pids_left(t_state *s);
 void		free_and_null_pids(t_state *s);
+void		null_pid(t_state *s, pid_t pid);
 void		free_all(t_state *s);
 
 #endif

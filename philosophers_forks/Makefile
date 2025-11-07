@@ -14,6 +14,7 @@ SRC         = src/main_bonus.c \
 			  src_init/init_philosophers_bonus.c \
 			  src_utils/ft_atoll_bonus.c \
 			  src_utils/sem_utils_bonus.c \
+			  src_utils/pid_utils.c \
 			  src_utils/utils_bonus.c
 
 OBJDIR      = obj

@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/01 20:38:00 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/06 00:29:30 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/07 12:36:20 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,12 +26,13 @@ int	safe_sem_post(sem_t *sem)
 	return (OK);
 }
 
-int	safe_sem_post_forks(sem_t *sem, int n, int ret)
+int	safe_sem_post_forks(int ret, sem_t *sem, t_state *s)
 {
-	while (n--)
-		if (OK != sem_post(sem)
-			&& OK == ret)
-			return (ret_and_print_err("Error: sem_post failure\n"));
+	if ((s->track >> FORK_1 & 1
+			&& OK != sem_post(sem))
+		|| (s->track >> FORK_2 & 1
+			&& OK != sem_post(sem)))
+		return (ret_and_print_err("Error: sem_post failure\n"));
 	return (ret);
 }
 

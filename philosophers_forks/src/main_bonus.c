@@ -6,36 +6,38 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:25:28 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/05 21:27:19 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/07 13:47:58 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo_bonus.h"
 #include <stdlib.h>
 
-static void	handle_philosophers_exit(t_state *s)
+static int	handle_philosophers_exit(t_state *s)
 {
 	pid_t	exited_pid;
+	int		ret;
 	int		status;
 	int		i;
 
+	ret = OK;
 	i = 0;
 	while (i < s->n_philos)
 	{
 		exited_pid = waitpid(-1, &status, 0);
-		if (exited_pid < 0
-			|| (WIFEXITED(status) && WEXITSTATUS(status) != FULL))
+		if (WIFEXITED(status) && WEXITSTATUS(status) != FULL)
 		{
 			kill_pids_left(s);
+			if (WEXITSTATUS(status) == ERR)
+				ret = ERR;
 			break ;
 		}
+		null_pid(s, exited_pid);
 		i++;
 	}
 	while (i < s->n_philos)
-	{
-		waitpid(s->pids[i], NULL, 0);
-		i++;
-	}
+		waitpid(s->pids[i++], NULL, 0);
+	return (ret);
 }
 
 int	main(int argc, char **argv)
@@ -48,6 +50,6 @@ int	main(int argc, char **argv)
 	if (OK == init_state(argc, argv, &s)
 		&& OK == init_semaphores(&s)
 		&& OK == init_philosophers(&s))
-		handle_philosophers_exit(&s);
-	return (free_all(&s), 0);
+		return (handle_philosophers_exit(&s));
+	return (free_all(&s), ERR);
 }

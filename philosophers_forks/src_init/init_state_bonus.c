@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 23:00:57 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/06 01:18:43 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/07 13:56:09 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,8 @@ static inline int	parse_attoll(long long *value, char *str, int allow_zero)
 	*value = ft_atoll(str);
 	if (*value < 0 || (!allow_zero && *value == 0))
 	{
-		printf("Error: arg '0' or not pos long long\n");
+		if (*value == 0)
+			printf("Error: arg '0'\n");
 		return (ERR);
 	}
 	return (OK);
@@ -26,6 +27,8 @@ static inline int	parse_attoll(long long *value, char *str, int allow_zero)
 int	init_state(int argc, char **argv, t_state *s)
 {
 	s->track = 0;
+	s->pids = NULL;
+	s->n_philos = 0;
 	if (OK != parse_attoll(&s->n_philos, argv[1], 0)
 		|| OK != parse_attoll(&s->t_die, argv[2], 0)
 		|| OK != parse_attoll(&s->t_eat, argv[3], 0)

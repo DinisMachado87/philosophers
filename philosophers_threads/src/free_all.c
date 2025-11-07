@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/29 23:05:22 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/07 16:35:56 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/07 20:33:34 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,8 @@ void	free_philos_and_forks(t_state *s)
 
 void	free_all(t_state *s)
 {
+	if (s->n_philos == 0 || s->n_philos == ERR)
+		return ;
 	free_philos_and_forks(s);
 	if (s->track & (1 << STATE_MTX))
 		pthread_mutex_destroy(&s->state_mtx);

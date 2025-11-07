@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/28 15:35:47 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/01 04:16:02 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/07 17:49:51 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,12 +57,18 @@ int	safe_print(char *str, t_philo *ph, t_state *s)
 {
 	long long	time;
 
-	time = now(&ph->time, s);
-	if (OK == mtx_lock_tracked(&s->state_mtx, s)
-		&& OK < printf("%lld %lld %s\n", time, ph->id, str)
+	if (OK != mtx_lock_tracked(&s->state_mtx, s))
+		return (set_and_print_error(s, "Err: safe_print"));
+	time = now(&ph->time, s) - s->start;
+	if (!s->end
+		&& OK < printf("%lld\t%lld %s\n", time, ph->id, str)
 		&& OK == mtx_unlock_tracked(&s->state_mtx, s))
 		return (is_end(s));
-	return (set_and_print_error(s, "Err: safe_print"));
+	else
+	{
+		mtx_unlock_tracked(&s->state_mtx, s);
+		return (set_and_print_error(s, "Err: safe_print"));
+	}
 }
 
 /*

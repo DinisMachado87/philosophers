@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 15:06:09 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/07 15:23:26 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/07 15:34:23 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,9 +34,6 @@ void	*death_monitor(void *arg)
 	while (1)
 	{
 		calc_time_left(ph, s, &time_left, now(ph));
-		sem_wait(s->sem_write);
-		printf("%lld\n", time_left);
-		sem_post(s->sem_write);
 		if (time_left <= 0)
 		{
 			sem_wait(s->sem_write);

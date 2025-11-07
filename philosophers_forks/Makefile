@@ -7,14 +7,14 @@ INCLUDES    = .
 
 SRC         = src/main_bonus.c \
 			  src/routine_bonus.c \
-			  src/monitor.c \
+			  src/monitor_bonus.c \
 			  src/free_all_bonus.c \
 			  src_init/init_state_bonus.c \
 			  src_init/init_semaphores_bonus.c \
 			  src_init/init_philosophers_bonus.c \
 			  src_utils/ft_atoll_bonus.c \
 			  src_utils/sem_utils_bonus.c \
-			  src_utils/pid_utils.c \
+			  src_utils/pid_utils_bonus.c \
 			  src_utils/utils_bonus.c
 
 OBJDIR      = obj

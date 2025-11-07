@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/29 23:05:22 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/01 03:35:33 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/07 16:35:56 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,10 +28,15 @@ void	free_philos_and_forks(t_state *s)
 	i = 0;
 	while (i < s->n_philos && s->philos)
 	{
-		if (s->philos[i].track & (1 << FORK_MTX))
-			pthread_mutex_destroy(&s->mtx_forks[i]);
 		if (s->philos[i].track & (1 << PHILO_THRD))
 			pthread_join(s->philos[i].life, NULL);
+		i++;
+	}
+	i = 0;
+	while (i < s->n_philos && s->philos)
+	{
+		if (s->philos[i].track & (1 << FORK_MTX))
+			pthread_mutex_destroy(&s->mtx_forks[i]);
 		if (s->philos[i].track & (1 << PHILO_MTX))
 			pthread_mutex_destroy(&s->philos[i].mtx_philo);
 		i++;

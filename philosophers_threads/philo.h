@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.d>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/29 19:26:01 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/01 03:33:35 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/07 16:50:26 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,8 @@ enum e_track_philo
 	FORK_MTX,
 	PHILO_MTX,
 	PHILO_THRD,
+	FORK_1,
+	FORK_2,
 };
 
 enum e_track_state

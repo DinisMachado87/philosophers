@@ -6,7 +6,7 @@
 /*   By: dimachad <dimachad@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/27 17:29:37 by dimachad          #+#    #+#             */
-/*   Updated: 2025/11/01 04:18:16 by dimachad         ###   ########.fr       */
+/*   Updated: 2025/11/07 17:33:09 by dimachad         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,19 +35,20 @@ static int	are_philos_full(t_state *s, t_philo *phs)
 static int	are_dead_philos(t_state *s, t_philo *phs)
 {
 	const long long	cur_time = now(&s->time, s);
+	int				is_dead;
 	long long		i;
 
 	i = 0;
 	while (i < s->n_philos)
 	{
 		mtx_lock_tracked(&phs[i].mtx_philo, s);
-		if (phs[i].nxt_death < cur_time)
+		is_dead = phs[i].nxt_death < cur_time;
+		mtx_unlock_tracked(&phs[i].mtx_philo, s);
+		if (is_dead)
 		{
-			mtx_unlock_tracked(&phs[i].mtx_philo, s);
 			safe_print("died\n", &phs[i], s);
 			return (END);
 		}
-		mtx_unlock_tracked(&phs[i].mtx_philo, s);
 		i++;
 	}
 	return (OK);
@@ -71,7 +72,7 @@ void	monitor(t_state *s)
 		if (are_dead_philos(s, phs)
 			|| (s->n_eats > 0 && are_philos_full(s, phs)))
 			set_end(s);
-		usleep(100);
+		usleep(1000);
 	}
 	return ;
 }
